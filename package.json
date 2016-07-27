@@ -1,0 +1,57 @@
+{
+  "name": "pixelizator",
+  "version": "1.0.0",
+  "description": "Pixelize em all",
+  "main": "index.js",
+  "dependencies": {
+    "autoprefixer-loader": "^3.2.0",
+    "babel-core": "^6.11.4",
+    "babel-loader": "^6.2.4",
+    "babel-polyfill": "^6.9.1",
+    "babel-preset-es2015": "^6.9.0",
+    "babel-preset-react": "^6.11.1",
+    "babel-preset-stage-0": "^6.5.0",
+    "bluebird": "^3.4.1",
+    "classnames": "^2.2.5",
+    "clean-webpack-plugin": "^0.1.10",
+    "cross-env": "^2.0.0",
+    "css-loader": "^0.23.1",
+    "less": "^2.7.1",
+    "less-loader": "^2.2.3",
+    "lodash": "^4.14.0",
+    "react": "^15.2.1",
+    "react-hot-loader": "^1.3.0",
+    "react-redux": "^4.4.5",
+    "react-router": "^2.6.0",
+    "react-router-redux": "^4.0.5",
+    "redux": "^3.5.2",
+    "redux-form": "^6.0.0-rc.3",
+    "redux-thunk": "^2.1.0",
+    "reselect": "^2.5.3",
+    "scroll-behavior": "^0.7.0",
+    "style-loader": "^0.13.1",
+    "webpack": "^1.13.1",
+    "whatwg-fetch": "^1.0.0"
+  },
+  "devDependencies": {
+    "postcss-loader": "^0.9.1",
+    "webpack-dev-server": "^1.14.1"
+  },
+  "babel": {
+    "presets": [
+      "es2015",
+      "react",
+      "stage-0"
+    ]
+  },
+  "scripts": {
+    "dev": "node ./node_modules/webpack-dev-server/bin/webpack-dev-server.js --config webpack/webpack.dev.config.js --hot --inline --progress-colors --host 0.0.0.0",
+    "build": "cross-env NODE_ENV=production webpack --config webpack/webpack.prod.config.js --progress --colors",
+    "test": "mocha --compilers js:babel-core/register --require ./src/.scripts/test_helper.js ./src/**/tests/**/*.js",
+    "test:watch": "npm run test -- --watch",
+    "storybook": "start-storybook -p 9001 -c ./src/.storybook"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}

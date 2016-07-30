@@ -1,4 +1,6 @@
 import React from "react";
+import _ from 'lodash';
+import nearestColor from 'nearest-color';
 
 export default class HomePage extends React.Component {
 
@@ -55,26 +57,129 @@ export default class HomePage extends React.Component {
         const bigPixelSize = 10;
         let colorMatrix = [];
 
-        for (let w = 0; w < width; w++) {
-            for (let h = 0; h < height; h++) {
-                const pixel = ctx.getImageData(w, h, 1, 1);
+        // const colors = {
+        //     red: '#f00',
+        //     yellow: '#ff0',
+        //     blue: '#00f'
+        // };
 
-                const wI = Math.floor((w / width) * (width / bigPixelSize));
-                const hI = Math.floor((h / height) * (height / bigPixelSize));
+        const colors = {
+            black: '#000',
+            white: '#fff',
+
+        };
+
+        let colorDetector = nearestColor.from(colors);
+
+        const imageData = ctx.getImageData(0, 0, width, height);
+
+        const pix = imageData.data;
+
+        //Процессия каждого пикселя
+        for (let i = 0, n = pix.length; i < n; i += 4) {
+            //Инверсия цвета
+            // pix[i  ] = 255 - pix[i  ]; // red
+            // pix[i+1] = 255 - pix[i+1]; // green
+            // pix[i+2] = 255 - pix[i+2]; // blue
+
+
+            //Цветовой шум
+            // pix[i  ] = pix[i  ] + _.random(0,50) - 25; // red
+            // pix[i+1] = pix[i+1] + _.random(0,50) - 25; // green
+            // pix[i+2] = pix[i+2] + _.random(0,50) - 25; // blue
+
+
+            //4 битность цвета
+            // pix[i  ] = Math.round(pix[i  ]/255) * 255;
+            // pix[i+1] = Math.round(pix[i+1  ]/255) * 255;
+            // pix[i+2] = Math.round(pix[i+2  ]/255) * 255;
+        }
+
+        //Составляем матрицу цвета по болшим пикселям
+        for (let h = 0; h < height; h++) {
+            for (let w = 0; w < width; w++) {
+
+                const wI = Math.floor((w / bigPixelSize));
+                const hI = Math.floor((h / bigPixelSize));
 
                 //Create array cell in matrix
-                if (colorMatrix[wI] === undefined){
-                    colorMatrix[wI] = [];
+                if (colorMatrix[hI] === undefined) {
+                    colorMatrix[hI] = [];
                 }
-                if (colorMatrix[wI][hI] === undefined){
-                    colorMatrix[wI][hI] = [];
+                if (colorMatrix[hI][wI] === undefined) {
+                    colorMatrix[hI][wI] = [];
                 }
 
-                colorMatrix[wI][hI].push(pixel);
+                const pixel = {
+                    r: pix[(width * h + w) * 4],
+                    g: pix[(width * h + w) * 4 + 1],
+                    b: pix[(width * h + w) * 4 + 2],
+                    a: pix[(width * h + w) * 4 + 3]
+                };
+
+                colorMatrix[hI][wI].push(pixel);
             }
         }
 
-        console.log(colorMatrix[0][0]);
+        for (let hI = 0; hI < colorMatrix.length; hI++) {
+            for (let wI = 0; wI < colorMatrix[hI].length; wI++) {
+
+                //Вычисляем единый цвет для пикселя
+                //TODO
+
+                const color = colorDetector(colorMatrix[hI][wI][0]);
+
+                colorMatrix[hI][wI] = [
+                    color.rgb.r,
+                    color.rgb.g,
+                    color.rgb.b,
+                ];
+
+            }
+        }
+
+        let step = 0;
+
+        //Составляем финальную картку
+        for (let h = 0; h < height; h++) {
+            for (let w = 0; w < width; w++) {
+
+                const wI = Math.floor((w / bigPixelSize));
+                const hI = Math.floor((h / bigPixelSize));
+
+                pix[(width * h + w) * 4] = colorMatrix[hI][wI][0];
+                pix[(width * h + w) * 4 + 1] = colorMatrix[hI][wI][1];
+                pix[(width * h + w) * 4 + 2] = colorMatrix[hI][wI][2];
+
+                // let color = [
+                //     pix[(width * h + w) * 4],
+                //     pix[(width * h + w) * 4 + 1],
+                //     pix[(width * h + w) * 4 + 2],
+                //     pix[(width * h + w) * 4 + 3],
+                // ]
+
+                //8 битность цвета
+                // pix[(width*h + w)*4] = Math.round(color[0]/128)*128;
+                // pix[(width*h + w)*4 + 1] = Math.round(color[1]/128)*128;
+                // pix[(width*h + w)*4 + 2] = Math.round(color[2]/128)*128;
+
+                //Картинка только в альфа слое
+                // pix[(width*h + w)*4 + 3] = 255 - pix[(width*h + w)*4]
+                // pix[(width*h + w)*4] = 255
+                // pix[(width*h + w)*4 + 1] = 255
+                // pix[(width*h + w)*4 + 2] = 255
+
+                //Боковая засветка
+                // pix[(width*h + w)*4] = pix[(width*h + w)*4] + w/10;
+                // pix[(width*h + w)*4 + 1] = pix[(width*h + w)*4 + 1] + w/10;
+                // pix[(width*h + w)*4 + 2] = pix[(width*h + w)*4 + 2] + w/10;
+                // pix[(width*h + w)*4 + 3] = pix[(width*h + w)*4 + 3] + w/10;
+
+            }
+        }
+
+        //Возвращаем данные обратно в канву
+        ctx.putImageData(imageData, 0, 0);
     }
 
     render() {

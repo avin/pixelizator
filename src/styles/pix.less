@@ -1,0 +1,73 @@
+@import './react-select/select';
+
+.btn-file {
+  position: relative;
+  overflow: hidden;
+}
+.btn-file input[type=file] {
+  position: absolute;
+  top: 0;
+  right: 0;
+  min-width: 100%;
+  min-height: 100%;
+  font-size: 100px;
+  text-align: right;
+  filter: alpha(opacity=0);
+  opacity: 0;
+  outline: none;
+  background: white;
+  cursor: inherit;
+  display: block;
+}
+
+.colorBrick{
+  background-color: rgb(0, 0, 0);
+  width: 50px;
+  height: 50px;
+  border: 1px solid black;
+  display: inline-block;
+  margin-right: 5px;
+  position: relative;
+
+  &.small{
+    width: 35px;
+    height: 35px;
+  }
+
+  &:hover{
+    .removeColor{
+      display: block;
+    }
+  }
+
+  .removeColor{
+    display: none;
+    width: 21px;
+    height: 21px;
+    background-color: #fff;
+    border: 1px solid black;
+    border-radius: 20px;
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    line-height: 17px;
+    padding-left: 4px;
+
+    &:hover{
+      background-color: #ddd;
+    }
+  }
+}
+
+.margin-right-5{
+  margin-right: 5px;
+}
+
+.control-label{
+  text-align: right;
+}
+
+canvas{
+  box-shadow: 1px 1px 5px black;
+  margin-bottom: 10px;
+}

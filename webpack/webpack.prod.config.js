@@ -3,7 +3,6 @@ var path = require('path');
 var webpack = require('webpack');
 var Clean = require('clean-webpack-plugin');
 var baseConfig = require('./base.config');
-var scripts = require('./scripts');
 
 
 var config =  _.merge( baseConfig, {

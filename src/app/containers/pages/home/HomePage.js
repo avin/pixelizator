@@ -7,8 +7,8 @@ import classNames from "classnames";
 import shortid from 'shortid';
 import {rgbToHex} from "../../../helpers/color";
 
-export default class HomePage extends React.Component {
 
+export default class HomePage extends React.Component {
 
     constructor(props) {
         super(props);
@@ -16,13 +16,31 @@ export default class HomePage extends React.Component {
         this.state = {
             imageProcessed: false,
             removeAlonePixels: true,
-            pixelSize: 10,
             inProgress: false,
             colors: {
-                black: '#000',
-                white: '#fff',
+                black: '#000000',
+                brown: '#AB5236',
+                darkGray: '#5F574F',
+                peach: '#FFCCAA',
+            },
+            pixelImageSize: {
+                width: 128,
+                height: 128,
             }
         }
+    }
+
+    componentDidMount() {
+        //Выставить демо картинку
+        const canvasElement = this.refs.canvas;
+        const ctx = canvasElement.getContext("2d");
+        canvasElement.width = 600;
+        canvasElement.height = 600;
+        var img = new Image;
+        img.onload = function () {
+            ctx.drawImage(img, 0, 0);
+        };
+        img.src = '/assets/img/demo/house.jpeg';
     }
 
     /**
@@ -71,12 +89,18 @@ export default class HomePage extends React.Component {
      * Process image convert
      */
     processImage() {
-        const {removeAlonePixels, colors, pixelSize} = this.state;
+        const {removeAlonePixels, colors, pixelImageSize} = this.state;
 
         const canvasElement = this.refs.canvas;
         const width = canvasElement.width;
         const height = canvasElement.height;
         const ctx = canvasElement.getContext("2d");
+
+        //Определяем размер одного пикселя по ширине (высота всегда пропорциональна)
+        let pixelSize = Math.floor(width / pixelImageSize.width);
+        
+        //Размер пикселя не может быть нелевым
+        pixelSize = pixelSize || 1;
 
         const processedCanvasElement = this.refs.processedCanvas;
         processedCanvasElement.height = height;
@@ -124,6 +148,8 @@ export default class HomePage extends React.Component {
 
                 const wI = Math.floor((w / pixelSize));
                 const hI = Math.floor((h / pixelSize));
+
+
 
                 //Create array cell in matrix
                 if (colorMatrix[hI] === undefined) {
@@ -259,7 +285,7 @@ export default class HomePage extends React.Component {
         this.setState({colors: colors})
     }
 
-    removeColor(colorName){
+    removeColor(colorName) {
 
         let {colors} = this.state;
 
@@ -268,7 +294,6 @@ export default class HomePage extends React.Component {
 
         this.setState({colors: colors})
     }
-
 
     renderPalette() {
         const {colors} = this.state;
@@ -286,7 +311,7 @@ export default class HomePage extends React.Component {
                              e.stopPropagation();
                              this.removeColor(colorName)
                          }}>
-                        <i className="fa fa-remove" />
+                        <i className="fa fa-remove"/>
                     </div>
                 </div>
             )
@@ -299,7 +324,7 @@ export default class HomePage extends React.Component {
                 </div>
 
                 <button className="btn btn-info"
-                onClick={() => this.addColor()}>
+                        onClick={() => this.addColor()}>
                     <i className="fa fa-fw fa-plus"/>
                     Add color
                 </button>
@@ -308,7 +333,7 @@ export default class HomePage extends React.Component {
 
     }
 
-    pickColor(e){
+    pickColor(e) {
         const canvas = this.refs.canvas;
 
         const x = e.pageX - canvas.offsetLeft;
@@ -414,14 +439,19 @@ export default class HomePage extends React.Component {
             c54: '#00FCFC',
             c55: '#F8D8F8',
         };
-        const noColorsPalette = {
-            white: '#fff'
-        };
+
 
         return (
             <div style={{paddingTop: 5, paddingBottom: 5}}>
                 <button className="btn btn-default margin-right-5"
-                        onClick={() => this.setState({colors: noColorsPalette})}>
+                        onClick={() => this.getAutoPalette()}>
+                    <i className="fa fa-fw fa-magic"/>
+                    <strong>
+                        Auto palette
+                    </strong>
+                </button>
+                <button className="btn btn-default margin-right-5"
+                        onClick={() => this.setState({colors: {}})}>
                     No colors
                 </button>
                 <button className="btn btn-default margin-right-5"
@@ -444,8 +474,43 @@ export default class HomePage extends React.Component {
         )
     }
 
+    getAutoPalette() {
+
+        const canvasElement = this.refs.canvas;
+
+
+        const colors = {};
+
+
+        var colorThief = new ColorThief();
+        const res = colorThief.getPalette(canvasElement, 8);
+        _.each(res, colorArray => {
+            colors[shortid.generate()] = rgbToHex(colorArray[0], colorArray[1], colorArray[2])
+        });
+
+
+        this.setState({colors})
+    }
+
+
+    handleChangePixelImageSize({width, height}) {
+        const canvasElement = this.refs.canvas;
+
+        if (width !== undefined){
+            height = Math.floor(width/canvasElement.width * canvasElement.height)
+        } else if (height !== undefined){
+            width = Math.floor(height/canvasElement.height * canvasElement.width)
+        }
+
+        this.setState({
+            pixelImageSize: {
+                height, width
+            }
+        })
+    }
+
     render() {
-        const {removeAlonePixels, pixelSize, imageProcessed, inProgress} = this.state;
+        const {removeAlonePixels, pixelSize, imageProcessed, inProgress, pixelImageSize} = this.state;
 
         var pixelSizeOptions = [
             {value: 5, label: '5px'},
@@ -458,17 +523,13 @@ export default class HomePage extends React.Component {
 
                 <div className="">
                     <div className="form-group">
-                        <label className="">Pixel size</label>
-
+                        <label className="">Real pixel image size</label>
                         <div>
-                            <Select
-                                name="form-field-name"
-                                options={pixelSizeOptions}
-                                onChange={(option) => this.setState({pixelSize: option.value})}
-                                value={pixelSize}
-                            />
+                            width:
+                            <input type="text" placeholder="width" value={pixelImageSize.width} onChange={(e) => this.handleChangePixelImageSize({width: e.target.value})}/>
+                            height:
+                            <input type="text" placeholder="height" value={pixelImageSize.height} onChange={(e) => this.handleChangePixelImageSize({height: e.target.value})}/>
                         </div>
-
                     </div>
 
                     <div className="form-group">
@@ -533,10 +594,11 @@ export default class HomePage extends React.Component {
                 <hr/>
 
                 <canvas ref="canvas" style={{ display: imageProcessed ? 'none' : 'block'}}
-                        onClick={(e) => this.pickColor(e)} />
+                        onClick={(e) => this.pickColor(e)}/>
                 <canvas ref="processedCanvas" style={{ display: imageProcessed ? 'block' : 'none'}}/>
 
             </div>
         )
     }
+
 }

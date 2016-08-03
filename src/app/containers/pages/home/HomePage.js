@@ -48,6 +48,7 @@ export default class HomePage extends React.Component {
      * Load image from input tag
      */
     loadImage() {
+        const {pixelImageSize} = this.state;
         let input, file, fr, img;
 
         if (typeof window.FileReader !== 'function') {
@@ -78,6 +79,8 @@ export default class HomePage extends React.Component {
 
                     const ctx = canvas.getContext("2d");
                     ctx.drawImage(img, 0, 0);
+
+                    this.handleChangePixelImageSize({width: pixelImageSize.width});
                 };
                 img.src = fr.result;
             };
@@ -148,8 +151,8 @@ export default class HomePage extends React.Component {
         for (let h = 0; h < height; h++) {
             for (let w = 0; w < width; w++) {
 
-                const wI = Math.round((w / pixelSize));
-                const hI = Math.round((h / pixelSize));
+                const wI = Math.floor((w / pixelSize));
+                const hI = Math.floor((h / pixelSize));
 
                 //Create array cell in matrix
                 if (colorMatrix[hI] === undefined) {

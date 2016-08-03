@@ -17,6 +17,7 @@ export default class HomePage extends React.Component {
             imageProcessed: false,
             removeAlonePixels: true,
             inProgress: false,
+            outputPixelSize: 5,
             colors: {
                 black: '#000000',
                 brown: '#AB5236',
@@ -89,7 +90,7 @@ export default class HomePage extends React.Component {
      * Process image convert
      */
     processImage() {
-        const {removeAlonePixels, colors, pixelImageSize} = this.state;
+        const {removeAlonePixels, colors, pixelImageSize, outputPixelSize} = this.state;
 
         const canvasElement = this.refs.canvas;
         const width = canvasElement.width;
@@ -97,15 +98,16 @@ export default class HomePage extends React.Component {
         const ctx = canvasElement.getContext("2d");
 
         //Определяем размер одного пикселя по ширине (высота всегда пропорциональна)
-        let pixelSize = Math.floor(width / pixelImageSize.width);
-        
+        let pixelSize = width / pixelImageSize.width;
+
         //Размер пикселя не может быть нелевым
         pixelSize = pixelSize || 1;
 
         const processedCanvasElement = this.refs.processedCanvas;
-        processedCanvasElement.height = height;
-        processedCanvasElement.width = width;
+        processedCanvasElement.height = pixelImageSize.height * outputPixelSize;
+        processedCanvasElement.width = pixelImageSize.width * outputPixelSize;
         const processedCtx = processedCanvasElement.getContext("2d");
+        const outputImageData = ctx.getImageData(0, 0, processedCanvasElement.width, processedCanvasElement.height);
 
 
         let colorMatrix = [];
@@ -146,10 +148,8 @@ export default class HomePage extends React.Component {
         for (let h = 0; h < height; h++) {
             for (let w = 0; w < width; w++) {
 
-                const wI = Math.floor((w / pixelSize));
-                const hI = Math.floor((h / pixelSize));
-
-
+                const wI = Math.round((w / pixelSize));
+                const hI = Math.round((h / pixelSize));
 
                 //Create array cell in matrix
                 if (colorMatrix[hI] === undefined) {
@@ -232,47 +232,24 @@ export default class HomePage extends React.Component {
             }
         }
 
-
         //Составляем финальную картку
-        for (let h = 0; h < height; h++) {
-            for (let w = 0; w < width; w++) {
+        for (let h = 0; h < pixelImageSize.height * outputPixelSize; h++) {
+            for (let w = 0; w < pixelImageSize.width * outputPixelSize; w++) {
 
-                const wI = Math.floor((w / pixelSize));
-                const hI = Math.floor((h / pixelSize));
+                const wI = Math.floor((w / outputPixelSize));
+                const hI = Math.floor((h / outputPixelSize));
 
-                pix[(width * h + w) * 4] = colorMatrix[hI][wI][0];
-                pix[(width * h + w) * 4 + 1] = colorMatrix[hI][wI][1];
-                pix[(width * h + w) * 4 + 2] = colorMatrix[hI][wI][2];
-
-                // let color = [
-                //     pix[(width * h + w) * 4],
-                //     pix[(width * h + w) * 4 + 1],
-                //     pix[(width * h + w) * 4 + 2],
-                //     pix[(width * h + w) * 4 + 3],
-                // ]
-
-                //8 битность цвета
-                // pix[(width*h + w)*4] = Math.round(color[0]/128)*128;
-                // pix[(width*h + w)*4 + 1] = Math.round(color[1]/128)*128;
-                // pix[(width*h + w)*4 + 2] = Math.round(color[2]/128)*128;
-
-                //Картинка только в альфа слое
-                // pix[(width*h + w)*4 + 3] = 255 - pix[(width*h + w)*4]
-                // pix[(width*h + w)*4] = 255
-                // pix[(width*h + w)*4 + 1] = 255
-                // pix[(width*h + w)*4 + 2] = 255
-
-                //Боковая засветка
-                // pix[(width*h + w)*4] = pix[(width*h + w)*4] + w/10;
-                // pix[(width*h + w)*4 + 1] = pix[(width*h + w)*4 + 1] + w/10;
-                // pix[(width*h + w)*4 + 2] = pix[(width*h + w)*4 + 2] + w/10;
-                // pix[(width*h + w)*4 + 3] = pix[(width*h + w)*4 + 3] + w/10;
-
+                outputImageData.data[(pixelImageSize.width * outputPixelSize * h + w) * 4] = colorMatrix[hI][wI][0];
+                outputImageData.data[(pixelImageSize.width * outputPixelSize * h + w) * 4 + 1] = colorMatrix[hI][wI][1];
+                outputImageData.data[(pixelImageSize.width * outputPixelSize * h + w) * 4 + 2] = colorMatrix[hI][wI][2];
+                outputImageData.data[(pixelImageSize.width * outputPixelSize * h + w) * 4 + 3] = 255;
             }
         }
 
+        console.log(outputImageData);
+
         //Возвращаем данные обратно в канву
-        processedCtx.putImageData(imageData, 0, 0);
+        processedCtx.putImageData(outputImageData, 0, 0);
         this.setState({imageProcessed: true, inProgress: false})
     }
 
@@ -509,8 +486,16 @@ export default class HomePage extends React.Component {
         })
     }
 
+    handleChangeOutputPixelSize(size){
+        size = _.toNumber(size);
+        if (isNaN(size)){
+            size = 1;
+        }
+        this.setState({outputPixelSize: size})
+    }
+
     render() {
-        const {removeAlonePixels, pixelSize, imageProcessed, inProgress, pixelImageSize} = this.state;
+        const {removeAlonePixels, pixelSize, imageProcessed, inProgress, pixelImageSize, colors, outputPixelSize} = this.state;
 
         var pixelSizeOptions = [
             {value: 5, label: '5px'},
@@ -531,6 +516,17 @@ export default class HomePage extends React.Component {
                             <input type="text" placeholder="height" value={pixelImageSize.height} onChange={(e) => this.handleChangePixelImageSize({height: e.target.value})}/>
                         </div>
                     </div>
+
+                    <div className="form-group">
+                        <label className="">Output pixel size</label>
+
+                        <div>
+                            <input type="text" value={outputPixelSize}
+                                   onChange={(e) => this.handleChangeOutputPixelSize(e.target.value)}/>
+                        </div>
+
+                    </div>
+
 
                     <div className="form-group">
                         <label className="">Remove alone pixels</label>
@@ -568,7 +564,7 @@ export default class HomePage extends React.Component {
                 </label>
 
                 <button className="btn btn-success margin-right-5"
-                        disabled={inProgress}
+                        disabled={inProgress || !_.size(colors)}
                         onClick={() => {
                             this.setState({inProgress: true});
                             setTimeout(() => {

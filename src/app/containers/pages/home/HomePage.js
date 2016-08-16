@@ -27,7 +27,8 @@ export default class HomePage extends React.Component {
             pixelImageSize: {
                 width: 128,
                 height: 128,
-            }
+            },
+            autoPaletteMaxColors: 8,
         }
     }
 
@@ -227,8 +228,39 @@ export default class HomePage extends React.Component {
                             _.isEqual(pixel, colorMatrix[h + 1][w]) ||
                             _.isEqual(pixel, colorMatrix[h + 1][w + 1]);
 
+                        //Если соседей нет
                         if (!hasSameNeighbors) {
-                            colorMatrix[h][w] = _.clone(colorMatrix[h - 1][w - 1]);
+
+                            //Выбираем наиболее встречающийся цвет по кругу
+                            const popularPixels = {};
+                            _.each([
+                                colorMatrix[h - 1][w - 1],
+                                colorMatrix[h - 1][w],
+                                colorMatrix[h - 1][w + 1],
+                                colorMatrix[h][w - 1],
+                                colorMatrix[h][w + 1],
+                                colorMatrix[h + 1][w - 1],
+                                colorMatrix[h + 1][w],
+                                colorMatrix[h + 1][w + 1],
+                            ], colorItem => {
+                                const colorStr = JSON.stringify(colorItem);
+                                if (!popularPixels[colorStr]) {
+                                    popularPixels[colorStr] = 1;
+                                } else {
+                                    popularPixels[colorStr]++
+                                }
+                            });
+
+                            let maxCount = 0;
+                            let maxPopularPixelName = '';
+                            _.each(popularPixels, (popularPixelCount, popularPixelName) => {
+                                if (popularPixelCount > maxCount){
+                                    maxCount = popularPixelCount;
+                                    maxPopularPixelName = popularPixelName;
+                                }
+                            });
+
+                            colorMatrix[h][w] = JSON.parse(maxPopularPixelName);
                         }
                     }
                 }
@@ -248,8 +280,6 @@ export default class HomePage extends React.Component {
                 outputImageData.data[(pixelImageSize.width * outputPixelSize * h + w) * 4 + 3] = 255;
             }
         }
-
-        console.log(outputImageData);
 
         //Возвращаем данные обратно в канву
         processedCtx.putImageData(outputImageData, 0, 0);
@@ -332,6 +362,8 @@ export default class HomePage extends React.Component {
     }
 
     renderPalettePresets() {
+        const {autoPaletteMaxColors} = this.state;
+
         const rgbColors = {
             red: '#f00',
             yellow: '#ff0',
@@ -423,6 +455,9 @@ export default class HomePage extends React.Component {
 
         return (
             <div style={{paddingTop: 5, paddingBottom: 5}}>
+                <input type="text"
+                       value={autoPaletteMaxColors}
+                       onChange={(e) => this.setState({autoPaletteMaxColors: e.target.value})}/>
                 <button className="btn btn-default margin-right-5"
                         onClick={() => this.getAutoPalette()}>
                     <i className="fa fa-fw fa-magic"/>
@@ -456,14 +491,16 @@ export default class HomePage extends React.Component {
 
     getAutoPalette() {
 
-        const canvasElement = this.refs.canvas;
+        let {autoPaletteMaxColors} = this.state;
 
+        autoPaletteMaxColors = _.toString(autoPaletteMaxColors) || 1;
+
+        const canvasElement = this.refs.canvas;
 
         const colors = {};
 
-
         var colorThief = new ColorThief();
-        const res = colorThief.getPalette(canvasElement, 8);
+        const res = colorThief.getPalette(canvasElement, _.toString(autoPaletteMaxColors));
         _.each(res, colorArray => {
             colors[shortid.generate()] = rgbToHex(colorArray[0], colorArray[1], colorArray[2])
         });
